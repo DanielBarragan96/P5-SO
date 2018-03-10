@@ -1,20 +1,37 @@
-/*Implantación de semáforos utilizando los mecanismos de
-comunicación entre procesos ya conocidos.
-Utilizando mecanismos básicos de comunicación entre procesos como son señales1 y memoria compartida2, desarrolle una implementación de semáforos enteros.
+//narcos_procesos.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/wait.h>
+#define atomic_xchg(A,B) __asm__ __volatile__( \
+												" lock xchg %1,%0 ;\n" \
+												: "=ir" (A) \
+												: "m" (B), "ir" (A) \
+												);
 
-Para esta implementación es necesario:
-• Definir la estructura de datos semáforo para definir las variables semáforo.
-• Las variables de tipo semáforo deben estar en memoria compartida.
-• Definir las primitivas waitsem y signalsem. Ambas primitivas reciben como
-argumento un semáforo.
-• Definir una primitiva para la inicialización de las variables semáforo initsem.
-• Garantizar la atomicidad3 en las llamadas waitsem, signalsem e initsem, puede utilizar la solución por hardware aquí mostrada.
-• En el Ejemplo 3 puede verse la forma de cómo un programa deberá llamar estas primitivas y los argumentos que reciben.
-• Un proceso puede bloquearse enviándosele una señal SIGSTOP y puede ser reanudado
-con una señal SIGCONT
+#define CICLOS 10
 
+typedef int* Semaphore;
 
-*/
+char *pais[3]={"Peru","Bolvia","Colombia"};
+Semaphore sem;
+
+void initsem(Semaphore checkSem, int value)
+{
+
+}
+
+void waitsem(Semaphore checkSem)
+{
+	
+}
+
+void signalsem(Semaphore checkSem)
+{
+	
+}
 
 void proceso(int i)
 {
@@ -37,10 +54,39 @@ void proceso(int i)
 
 int main()
 {
-	// Incializar el contador del semáforo en 1 una vez que esté
-	// en memoria compartida, de manera que solo a un proceso se le
-	// permitirá entrar a la sección crítica
-	initsem(sem,1);
+	int pid;
+	int status;
+	int shmid;
+	int args[3];
 	
-
+	// Solicitar memoria compartida
+	shmid=shmget(0x1234,sizeof(sem),0666|IPC_CREAT);
+	if(shmid==-1)
+	{
+		perror("Error en la memoria compartida\n");
+		exit(1);
+	}
+	// Conectar la variable a la memoria compartida
+	sem=shmat(shmid,NULL,0);
+	if(sem==NULL)
+	{
+		perror("Error en el shmat\n");
+		exit(2);
+	}
+	*sem=0;
+	
+	for(int i=0;i<3;i++)
+	{
+		// Crea un nuevo proceso hijo que ejecuta la función proceso()
+		pid=fork();
+		if(pid==0)
+		proceso(i);
+	}
+	for(int i=0;i<3;i++)
+		pid = wait(&status);
+		
+	// Eliminar la memoria compartida
+	shmdt(sem);
 }
+
+
