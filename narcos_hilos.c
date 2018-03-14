@@ -60,4 +60,3 @@ int main()
 	for(i=0;i<3;i++)
 		res = pthread_join(tid[i], &thread_result);
 }
-

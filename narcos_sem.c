@@ -22,31 +22,29 @@ typedef struct
 
 char *pais[3]={"Peru","Bolvia","Colombia"};
 
-void initsem(Semaphore checkSem, int value)
+void initsem(Semaphore* checkSem, int value)
 {
-	*checkSem.value = checkSem.max_val;
-	checkSem.max_val = value;
+	checkSem->max_val = value;
+	*checkSem->value = checkSem->max_val;
 }
 
-void waitsem(Semaphore checkSem)
+void waitsem(Semaphore* checkSem)
 {
 	int l=0;
 	//do { atomic_xchg(l,*sem.value); } while(l<=0);
-	while(l > *checkSem.value)
-	{
-	}
-	*checkSem.value -= 1;
+	while(l > *checkSem->value);
+	*checkSem->value -= 1;
 }
 
-void signalsem(Semaphore checkSem)
+void signalsem(Semaphore* checkSem)
 {
-	if(checkSem.max_val > *checkSem.value)
+	if(checkSem->max_val > *checkSem->value)
 	{
-		*checkSem.value += 1;		
+		*checkSem->value += 1;		
 	}
 }
 
-void proceso(Semaphore sem, int i)
+void proceso(Semaphore* sem, int i)
 {
 	int k;
 	for(k=0;k<CICLOS;k++)
@@ -67,14 +65,14 @@ void proceso(Semaphore sem, int i)
 
 int main()
 {
-	Semaphore sem;
+	Semaphore* sem;
 	int pid;
 	int status;
 	int shmid;
 	int args[3];
 	
 	// Solicitar memoria compartida
-	shmid=shmget(0x1234,sizeof(sem),0666|IPC_CREAT);
+	shmid=shmget(0x1234,sizeof(Semaphore),0666|IPC_CREAT);
 	
 	if(shmid==-1)
 	{
@@ -83,9 +81,9 @@ int main()
 	}
 	
 	// Conectar la variable a la memoria compartida
-	int* shm_ptr = (int *) shmat(shmid,NULL,0);
+	sem = (Semaphore *) shmat(shmid,NULL,0);
 	
-	if(shm_ptr==NULL)
+	if(sem==NULL)
 	{
 		perror("Error en el shmat\n");
 		exit(2);
