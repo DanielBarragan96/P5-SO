@@ -16,32 +16,26 @@
 typedef struct
 {
 	int max_val;
-	int* value;
+	float* value;
 }Semaphore;
 	
-
-	int shmid;
-	float* shm;
-
+int shmid;
+float* shm;
 char *pais[3]={"Peru","Bolvia","Colombia"};
 
 void initsem(Semaphore* checkSem, int value)
 {
-	printf("\nprueba init %d\n",value);
 	checkSem->max_val = value;
-	printf("\nprueba init 2\n");
-	*checkSem->value = checkSem->max_val;
-	printf("FIN init %d\n",checkSem->max_val);
+	checkSem->value = shm;
+	printf("FIN init %d%f\n",checkSem->max_val,*checkSem->value);
 }
 
 void waitsem(Semaphore* checkSem, float* shm)
 {
 	int l=0;
 	//do { atomic_xchg(l,*sem.value); } while(l<=0);
-	*checkSem->value = *shm;
 	while(l > *checkSem->value);
 	*checkSem->value -= 1;
-	*shm=*checkSem->value;
 }
 
 void signalsem(Semaphore* checkSem)
@@ -49,28 +43,19 @@ void signalsem(Semaphore* checkSem)
 	if(checkSem->max_val > *checkSem->value)
 	{
 		*checkSem->value += 1;	
-		*shm=(float)*checkSem->value;	
 	}
 }
 
 void proceso(Semaphore* sem, int i)
 {
 	int k;	
-	// Conectar la variable a la memoria compartida
-	shm = shmat(shmid,NULL,0);
-	
-	if(shm==NULL)
-	{
-		perror("Error en el shmat\n");
-		exit(2);
-	}
 
 	for(k=0;k<CICLOS;k++)
 	{
-		printf("\nproceso %d con %s y sema: %f\n",i,pais[i],*shm);
+		//printf("\nproceso %d con %s y sema: %f\n",i,pais[i],*shm);
 		waitsem(sem,shm);
 		printf("Entra %s ",pais[i]);
-		fflush(stdout);
+		//fflush(stdout);
 		sleep(rand()%3);
 		printf("- %s Sale\n",pais[i]);
 		signalsem(sem);
@@ -83,7 +68,8 @@ void proceso(Semaphore* sem, int i)
 int main()
 {
 	int init =0;
-	Semaphore sema={0, &init};	
+	Semaphore sema;
+	sema.max_val=0;
 	Semaphore* sem = &sema;
 	int pid;
 	int status;
@@ -91,12 +77,20 @@ int main()
 	int args[3];
 	// Solicitar memoria compartida
 	shmid=shmget(0x1234,sizeof(Semaphore),0666|IPC_CREAT);
-	
 	if(shmid==-1)
 	{
 		perror("Error en la memoria compartida\n");
 		exit(1);
 	}
+	// Conectar la variable a la memoria compartida
+	shm = shmat(shmid,NULL,0);
+	
+	if(shm==NULL)
+	{
+		perror("Error en el shmat\n");
+		exit(2);
+	}
+
 	initsem(sem,0);//inicia en cero por que no está tomado
 	
 	for(int i=0;i<3;i++)
