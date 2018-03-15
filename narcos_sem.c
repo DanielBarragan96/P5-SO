@@ -27,13 +27,11 @@ void initsem(Semaphore* checkSem, int value)
 {
 	checkSem->max_val = value;
 	checkSem->value = shm;
-	printf("FIN init %d%f\n",checkSem->max_val,*checkSem->value);
 }
 
 void waitsem(Semaphore* checkSem, float* shm)
 {
 	int l=0;
-	//do { atomic_xchg(l,*sem.value); } while(l<=0);
 	while(l > *checkSem->value);
 	*checkSem->value -= 1;
 }
