@@ -5,11 +5,11 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
-#define atomic_xchg(A,B) __asm__ __volatile__( \
-												" lock xchg %1,%0 ;\n" \
-												: "=ir" (A) \
-												: "m" (B), "ir" (A) \
-												);
+   #define atomic_xchg(A,B) __asm__ __volatile__( \
+						" lock xchg %1,%0 ;\n" \
+						: "=ir" (A) \
+						: "m" (B), "ir" (A) \
+						);
 
 #define CICLOS 10
 
@@ -24,8 +24,11 @@ char *pais[3]={"Peru","Bolvia","Colombia"};
 
 void initsem(Semaphore* checkSem, int value)
 {
+	printf("\nprueba init %d\n",value);
 	checkSem->max_val = value;
-	*checkSem->value = checkSem->max_val;
+	printf("\nprueba init 2\n");
+	checkSem->max_val = *checkSem->value;
+	printf("FIN init\n");
 }
 
 void waitsem(Semaphore* checkSem)
@@ -65,10 +68,13 @@ void proceso(Semaphore* sem, int i)
 
 int main()
 {
-	Semaphore* sem;
+	int init =0;
+	Semaphore sema={0, &init};	
+	Semaphore* sem = &sema;
 	int pid;
 	int status;
 	int shmid;
+	float* shm;
 	int args[3];
 	
 	// Solicitar memoria compartida
@@ -81,9 +87,12 @@ int main()
 	}
 	
 	// Conectar la variable a la memoria compartida
-	sem = (Semaphore *) shmat(shmid,NULL,0);
-	
-	if(sem==NULL)
+	printf("prueba1 \n");
+	shm = shmat(shmid,NULL,0);
+	printf("prueba 1.5 \n");
+	//printf("prueba 2: %f",*shm);
+
+	if(shm==NULL)
 	{
 		perror("Error en el shmat\n");
 		exit(2);
